@@ -2,6 +2,10 @@
 #-----------------------------------------------------------------------------#
 #-------------------------------------Utu-------------------------------------#
 #-----------------------------------------------------------------------------#
+#!/bin/sh
+#-----------------------------------------------------------------------------#
+#----------------------------------Lyfmeno------------------------------------#
+#-----------------------------------------------------------------------------#
 export PATH="$HOME/.local/bin:$PATH"
 export LIBGL_ALWAYS_INDIRECT=1
 # COLORS
@@ -55,14 +59,6 @@ rsource()
 	fi
 }
 
-get_github_credentials() {
-  echo "Enter your GitHub username:"
-  read GITHUB_USERNAME
-
-  read -s -p "Enter your GitHub password: " GITHUB_PASSWORD
-  echo  # Move to a new line after password input
-}
-
 get_github_credentials_and_title() {
   echo "Enter your GitHub username:"
   read GITHUB_USERNAME
@@ -75,38 +71,51 @@ get_github_credentials_and_title() {
   read PR_TITLE
 }
 
-# Function to create a pull request
+# Function to create a pull request, conditionally prompting based on the user
 create_pull_request() {
   local REPO_OWNER=Lyfmeno
   local REPO_NAME=Lyph
   local BASE_BRANCH=main
   local FEATURE_BRANCH=feature-branch
 
-  get_github_credentials_and_title
+  # Check if the user is lyfmeno
+  if [ "$GITHUB_USERNAME" != "Lyfmeno" ]; then
+    get_github_credentials_and_title
 
-  curl -X POST \
-    -u "$GITHUB_USERNAME:$GITHUB_PASSWORD" \
-    -H "Content-Type: application/json" \
-    -d "{\"title\":\"$PR_TITLE\", \"head\":\"$FEATURE_BRANCH\", \"base\":\"$BASE_BRANCH\", \"body\":\"Description of your pull request\"}" \
-    https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls
+    curl -X POST \
+      -u "$GITHUB_USERNAME:$GITHUB_PASSWORD" \
+      -H "Content-Type: application/json" \
+      -d "{\"title\":\"$PR_TITLE\", \"head\":\"$FEATURE_BRANCH\", \"base\":\"$BASE_BRANCH\", \"body\":\"Description of your pull request\"}" \
+      https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls
+  else
+    echo "Skipping pull request creation for user lyfmeno."
+  fi
+}
+
+push_to_submodule() {
+    local submodule_path=$1
+    git -C "$submodule_path" add -A
+    git -C "$submodule_path" commit -m "$*"
+    git -C "$submodule_path" push
 }
 
 upshepard() {
     push_to_submodule "Templates/TemplateFilesShepard"
-    create_pull_request
 }
 
 uputu() {
     push_to_submodule "Templates/TemplateFilesUtu"
-    create_pull_request
 }
 
 upatsuko() {
     push_to_submodule "Templates/TemplateFilesAtsuko"
-    create_pull_request
 }
 
 upall() {
+    upshepard
+    uputu
+    upatsuko
+    create_pull_request
     fullgit "$@"
 }
 
